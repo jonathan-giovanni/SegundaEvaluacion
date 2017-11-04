@@ -1,0 +1,52 @@
+/*
+	primero se agregan los permisos, esto va en el manifest,
+	antes de <application ...
+*/
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+/*
+	segundo se agrega la solicitud de permisos,
+	esto va en onCreate de la actividad principal
+*/
+if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+            //ask for permission
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, READ_EXTERNAL_STORAGE_PERMISSION_CODE);
+            }
+        }
+/*
+	el resto de codigo va dentro de la actividad principal
+*/
+ public void pickImage() {
+        Intent intent = new Intent(Intent.ACTION_PICK,android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        startActivityForResult(intent, PICK_PHOTO_FOR_AVATAR);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == PICK_PHOTO_FOR_AVATAR && resultCode == Activity.RESULT_OK) {
+            Uri selectedImage = data.getData();
+            Bitmap bmp = null;
+            try {
+                bmp = getBitmapFromUri(selectedImage);
+                if(bmp!=null) {
+                	String ruta = data.getData().getPath();
+                    //aqui se agrega la imagen a la lista
+                    adaptadorImagen.notifyDataSetChanged();
+                }
+            } catch (IOException e) {
+                Toast.makeText(this,"Error loading image",Toast.LENGTH_SHORT);
+                e.printStackTrace();
+            }
+
+        }
+    }
+
+    private Bitmap getBitmapFromUri(Uri uri) throws IOException {
+        ParcelFileDescriptor parcelFileDescriptor =
+                getContentResolver().openFileDescriptor(uri, "r");
+        FileDescriptor fileDescriptor = parcelFileDescriptor.getFileDescriptor();
+        Bitmap image = BitmapFactory.decodeFileDescriptor(fileDescriptor);
+        parcelFileDescriptor.close();
+        return image;
+    }
